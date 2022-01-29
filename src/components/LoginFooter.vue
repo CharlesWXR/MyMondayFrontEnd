@@ -1,18 +1,23 @@
 <template>
-    <el-button type="text">忘记密码？</el-button>
-    <a-divider type="vertical"></a-divider>
-    <el-button type="text">创建账号</el-button>
+    <el-row justify="center">
+        <el-col :span="8">        
+            <el-button type="text">忘记密码？</el-button>
+            <a-divider type="vertical"></a-divider>
+            <el-button type="text" @click="createAccount"> 创建账号</el-button>
+        </el-col>        
+    </el-row>
 </template>
 
 <script>
-import { defineComponent } from '@vue/composition-api'
-
-export default defineComponent({
+export default {
     name: 'LoginFooter',
-    setup() {
-        
-    },
-})
+    methods: {
+        createAccount() {
+            this.$router.push('/register')
+        }
+    }
+}
+
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-    <el-row justify="center">
+    <el-row justify="center" class="login-header">
         <el-col :lg="2" :md="2" :sm="4" :xs="4">
             <img :src="logoSrc" class="login-header-logo">
         </el-col>
@@ -24,6 +24,11 @@ export default {
 </script>
 
 <style scoped>
+    .login-header {
+		padding-top: 20vh;
+		margin-bottom: 5vh;
+	}
+ 
     .login-header-logo {
         margin: auto;
         width: 80%;

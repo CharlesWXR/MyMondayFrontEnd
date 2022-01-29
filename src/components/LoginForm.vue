@@ -26,7 +26,7 @@
                 <a-input-password v-model:value="formState.password" />
             </a-form-item>
 
-            <a-form-item :wrapper-col="{ offset: 4, span: 16 }">
+            <a-form-item :wrapper-col="{ offset: 0, span: 1 }" justify="center">
                 <a-button type="primary" :disabled="disabled" html-type="submit"> 上 工 </a-button>
             </a-form-item>
         </a-form>
@@ -35,7 +35,7 @@
 <script>
 import { defineComponent, reactive, computed, getCurrentInstance } from 'vue';
 import { message } from 'ant-design-vue'
-import { useRouter } from 'vue-router'
+
 import qs from 'qs'
 
 export default defineComponent({
@@ -56,12 +56,16 @@ export default defineComponent({
             const { data : res } = await appContext.config.globalProperties.$http.post("/api/exclude/login", 
             qs.stringify(formState))
             if (res.code === 1000) {
+                localStorage.removeItem("Token")
                 message.error("用户名不存在 / 密码不正确！")
             }
             else if (res.code === 200) {
                 localStorage.setItem("Token", res.result.token)
-                localStorage.setItem("User", res.result.user)
-                userRouter.push("/personalhome")
+                appContext.config.globalProperties.$store.commit({
+                    type: 'setUser',
+                    user: res.result.user
+                })
+                appContext.config.globalProperties.$router.push("/personalhome")
             }
             else {
                 message.warning("未知错误！")
