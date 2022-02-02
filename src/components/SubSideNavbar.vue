@@ -2,7 +2,7 @@
     <div class="avatar" ref="avatar">
         <a-avatar :src="avatarPath" v-if="hasAvatar.state == true" :size="avatarSize"/>
         <a-avatar style="background-color: #1890ff" v-if="hasAvatar.state == false" :size="avatarSize">
-            <template #icon><UserOutlined /></template>
+            <template #icon><user-outlined /></template>
         </a-avatar>
     </div>
     <a-menu v-model:selectedKeys="selected.key" mode="inline" theme="dark">
@@ -11,40 +11,73 @@
                 <template #title>
                     <span>简介：{{ loadDescription(workspace.description) }}</span>
                 </template>
-                <menu-unfold-outlined />
+                <right-circle-outlined />
                 <span>{{ workspace.name }}</span>
             </a-tooltip>
+        </a-menu-item>
+        <a-menu-item>
+            <plus-circle-outlined />
+            <span>添加工作区</span>
         </a-menu-item>
     </a-menu>
 </template>
 
 <script>
-    import { MenuUnfoldOutlined } from '@ant-design/icons-vue'
+    import { RightCircleOutlined, PlusCircleOutlined } from '@ant-design/icons-vue'
     import { defineComponent, reactive, computed, getCurrentInstance, ref } from 'vue'
     import { UserOutlined } from '@ant-design/icons-vue'
 
     export default defineComponent({
         name: 'SubSideNavbar',
         components: {
-            MenuUnfoldOutlined,
+            RightCircleOutlined,
             UserOutlined,
+            PlusCircleOutlined,
         },
         props: ['collapsed'],
         data() {
             return {
             }
         },
+        methods: {
+            loadDescription(des) {
+                if(typeof(des) == undefined || des === null || typeof des !== 'String' || des.length == 0)
+                    return "无"
+                else
+                    return des
+            },
+        },
         computed: {
             avatarSize() {
                 return this.collapsed ? 32 : 80
             },
             workspaces() {
-                let targetID = this.$store.state.selectedDepartmentID
-                this.$store.state.departments.forEach(element => {
-                    if (element.id == targetID)
-                        return element.workspaces
-                });
-            }
+                let departments = this.$store.state.departments
+                let index = this.$store.state.presentDepartmentIndex
+                if (typeof(index) == undefined 
+                    || typeof(departments) === undefined 
+                    || departments === null
+                    || departments.length == 0)
+                    return []
+                else  
+                    return departments[index].workspaces
+            },
+        },
+        created() {
+            this.selected.key = this.$store.state.selectedWorkspaceID
+            this.$watch(
+                () => this.selected.key,
+                (newVal, oldVal) => {
+                    if(newVal != this.$store.state.selectedWorkspaceID) {
+                        if (typeof(newVal) != undefined && newVal !== null && newVal.length > 0) {
+                            this.$store.dispatch({
+                                type: 'setPresentWorkspace',
+                                selectedWorkspaceID: newVal
+                            })
+                        }
+                    }
+                }
+            )
         },
         setup() {
             const { appContext } = getCurrentInstance();
@@ -71,17 +104,7 @@
             });
 
             const selected = reactive ({
-                key: ref([1])
-            })
-
-            let params = { workspace_id: appContext.config.globalProperties.$store.state.selectedDepartmentID }
-
-            appContext.config.globalProperties.$store.dispatch({
-                type: 'refreshTaskgroups',
-                params: params,
-            })
-            .then(() => {
-                selected.key[0] = appContext.config.globalProperties.$store.state.selectedWorkspaceID
+                key: ref([2])
             })
 
             return {
@@ -99,6 +122,6 @@
         display: flex;
         padding: 15%;
         justify-content: center;
-        vertical-align: middle;
+        align-items: center;
     }
 </style>

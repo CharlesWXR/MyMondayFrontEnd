@@ -17,7 +17,7 @@
 
 <script>
     import { MenuUnfoldOutlined } from '@ant-design/icons-vue';
-    import { defineComponent, ref, reactive, getCurrentInstance } from 'vue';
+    import { defineComponent, ref, reactive, getCurrentInstance, computed } from 'vue';
 
     export default defineComponent({
         name: 'SideNavbar',
@@ -26,7 +26,7 @@
         },
         methods:{
             loadDescription(des) {
-                if(des === undefined || des === null || typeof des !== 'String' || des.length == 0)
+                if(typeof(des) === undefined || des === null || typeof des !== 'String' || des.length == 0)
                     return "无"
                 else
                     return des
@@ -36,17 +36,21 @@
             this.$watch(
                 () => this.selected.key,
                 (newVal, oldVal) => {
-                    this.$store.commit({
-                        type: 'setSelectedDepartment',
-                        selectedDepartmentID: newVal[0]
-                    })
+                    if(newVal != this.$store.state.selectedDepartmentID) {
+                        if (typeof(newVal) != undefined && newVal !== null && newVal.length > 0) {
+                            this.$store.dispatch({
+                                type: 'setPresentDepartment',
+                                selectedDepartmentID: newVal
+                            })
+                        }
+                    }
                 }
             )
         },
         computed: {
             departments() {
                 return this.$store.state.departments
-            }
+            },
         },
         data() {
             return {
@@ -54,17 +58,12 @@
             }
         },
         setup() {
-            const { appContext } = getCurrentInstance()
+            const { appContext } = getCurrentInstance();
             
             const selected = reactive({
-                key: ref([1])
+                key: ref([2])
             })
 
-            appContext.config.globalProperties.$store.dispatch('refreshDepartments')
-            .then(() => {
-                selected.key[0] = appContext.config.globalProperties.$store.state.selectedDepartmentID
-            })
-            
             return {
                 selected
             }

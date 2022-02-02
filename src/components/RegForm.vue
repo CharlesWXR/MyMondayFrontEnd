@@ -103,7 +103,7 @@ export default defineComponent({
                 message.warn("用户名或工号已被占用");
             }
             else if (res.code === 200) {
-                message.log("注册成功！");
+                message.info("注册成功！");
                 setTimeout(() => {
                     appContext.config.globalProperties.$router.push("/")
                 }, 500)
