@@ -42,7 +42,9 @@
                                 <check-outlined class="editable-cell-icon-check" @click="save(record.id, index, 'name')" />
                             </div>
                             <div v-else class="editable-cell-text-wrapper">
-                                {{ text || ' ' }}
+                                <a @click='showTaskDetailDrawer(record.id, index)'>
+                                    {{ text || ' ' }}
+                                </a>
                                 <edit-outlined class="editable-cell-icon" @click="edit(record.id, index, 'name')" />
                             </div>
                         </div>
@@ -51,6 +53,7 @@
                     <template v-else-if="column.dataIndex === 'init_time'">
                         <span>{{ formatDate(record.init_time) }}</span>
                     </template>
+                    <!-- 截止日期 -->
                     <template v-else-if="column.dataIndex === 'ddl'">
                         <a-date-picker
                             :allow-clear="false"
@@ -68,6 +71,13 @@
                     <!-- 任务发起者 -->
                     <template v-else-if="column.dataIndex === 'initiators'">
                         <a-avatar-group :max-count="2" :max-style="{ color: '#f56a00', backgroundColor: '#fde3cf' }">
+                             <a-tooltip title="添加用户" placement="top">
+                                 <a @click="showAddInitiatorDrawer(record.id, index)">
+                                    <a-avatar style="background-color: #1890ff">
+                                        <template #icon><plus-outlined /></template>
+                                    </a-avatar>
+                                 </a>
+                            </a-tooltip>
                             <div v-for='(initiator, i) in record.initiators' :key='initiator.id'>
                                 <a @click="showUserDrawer(record.id, index, i)">
                                     <a-tooltip :title="initiator.name" placement="top">
@@ -79,6 +89,7 @@
                                 </a>
                             </div>
                         </a-avatar-group>
+                        <!-- 任务发起人用户信息drawer -->
                         <a-drawer
                             title="用户信息"
                             placement="right"
@@ -102,14 +113,64 @@
                                 <a-descriptions-item :span='3' label='职务'>{{  selectedInitiator.data.title }}</a-descriptions-item>
                             </a-descriptions>
                         </a-drawer>
+                        <!-- 添加任务发起人drawer -->
+                        <a-drawer
+                            title="添加任务发起人"
+                            placement="right"
+                            :visible="addInitDrawerVisible"
+                            @close="onAddinitiatorDrawerClose"
+                            size="large"
+                        >
+                            <template #extra>
+                                <a-button type='primary' style="margin-right: 10px" @click="onAddinitiatorDrawerSave(record.id)">保存修改</a-button>
+                                <a-button @click="onAddinitiatorDrawerClose">放弃修改</a-button>
+                            </template>
+                            <a-select
+                                v-model:value="initiatorValue"
+                                mode="multiple"
+                                label-in-value
+                                placeholder="选择需要添加的用户"
+                                style="width: 100%"
+                                :filter-option="false"
+                                :not-found-content="initiatorFetching ? undefined : null"
+                                :options="initiatorData"
+                                @search="fetchAccepters"
+                            >
+                                <template v-if="initiatorFetching" #notFoundContent>
+                                    <a-spin size="small" />
+                                </template>
+                            </a-select>
+                        </a-drawer>
+                    </template>
+                    <!-- 优先级 -->
+                    <template v-else-if="column.dataIndex === 'priority'">
+                        <a-dropdown  @visibleChange="statusDropdownVisibilityChange(record.id, index)">
+                            <a class="ant-dropdown-link" @click.prevent>
+                                <a-tag :color="taskPriorityMap[record.priority].color">{{ taskPriorityMap[record.priority].msg }}</a-tag>
+                            </a>
+                            <template #overlay>
+                                <a-menu @click="onChangePriority">
+                                    <a-menu-item v-for="(priority, index) in taskPriorityMap" :key="index">
+                                        <a-tag :color="priority.color">{{ priority.msg }}</a-tag>
+                                    </a-menu-item>
+                                </a-menu>
+                            </template>
+                        </a-dropdown>
                     </template>
                     <!-- 任务接受者 -->
                     <template v-else-if="column.dataIndex === 'accepters'">
                         <a-avatar-group :max-count="2" :max-style="{ color: '#f56a00', backgroundColor: '#fde3cf' }">
-                            <div v-for='(initiator, i) in record.initiators' :key='initiator.id'>
+                            <a-tooltip title="添加用户" placement="top">
+                                 <a @click="showAddAccepterDrawer(record.id, index)">
+                                    <a-avatar style="background-color: #1890ff">
+                                        <template #icon><plus-outlined /></template>
+                                    </a-avatar>
+                                 </a>
+                            </a-tooltip>
+                            <div v-for='(accepter, i) in record.accepters' :key='accepter.id'>
                                 <a @click="showAccepterDrawer(record.id, index, i)">
-                                    <a-tooltip :title="initiator.name" placement="top">
-                                        <a-avatar v-if='initiator.avatar_path' :scr='initiator.avatar_path' />
+                                    <a-tooltip :title="accepter.name" placement="top">
+                                        <a-avatar v-if='accepter.avatar_path' :scr='accepter.avatar_path' />
                                         <a-avatar v-else style="backgroud-color: #1890ff">
                                             <template #icon><user-outlined /></template>
                                         </a-avatar>
@@ -120,8 +181,8 @@
                         <a-drawer
                             title="用户信息"
                             placement="right"
-                            :visible="accpterDrawerVisible"
-                            @close="onAccpterDrawerClose"
+                            :visible="accepterDrawerVisible"
+                            @close="onAccepterDrawerClose"
                             size="large"
                         >  
                             <div style="justify-content: center; display: flex; padding: 15%; align-items: center;">
@@ -140,18 +201,70 @@
                                 <a-descriptions-item :span='3' label='职务'>{{  selectedAccepter.data.title }}</a-descriptions-item>
                             </a-descriptions>
                         </a-drawer>
+                        <!-- 添加任务发起人drawer -->
+                        <a-drawer
+                            title="添加任务接受者"
+                            placement="right"
+                            :visible="addAccepterDrawerVisible"
+                            @close="onAddAccepterDrawerClose"
+                            size="large"
+                        >
+                            <template #extra>
+                                <a-button type='primary' style="margin-right: 10px" @click="onAddAccepterDrawerSave(record.id, record.state)">保存修改</a-button>
+                                <a-button @click="onAddAccepterDrawerClose">放弃修改</a-button>
+                            </template>
+                            <a-select
+                                v-model:value="accepterValue"
+                                mode="multiple"
+                                label-in-value
+                                placeholder="选择需要添加的用户"
+                                style="width: 100%"
+                                :filter-option="false"
+                                :not-found-content="accepterFetching ? undefined : null"
+                                :options="accepterData"
+                                @search="fetchAccepters"
+                            >
+                                <template v-if="accepterFetching" #notFoundContent>
+                                    <a-spin size="small" />
+                                </template>
+                            </a-select>                  
+                        </a-drawer>
                     </template>
                 </template>
             </a-table>
+            <!-- 任务详细信息drawer -->
+            <a-drawer
+                title="任务详细信息"
+                placement="right"
+                :visible="detailDrawerVisibility"
+                @close="onDetailDrawerClose"
+                size="large"
+            >
+                <a-typography-title :level='2'>{{ editableData[selectedTaskID].name }}</a-typography-title>
+                <div class="editable-cell">
+                    <div v-if="editDes" class="editable-cell-input-wrapper">
+                        <a-input v-model:value="editableData[selectedTaskID].description" @pressEnter="saveDescription" />
+                        <check-outlined class="editable-cell-icon-check" @click="saveDescription" />
+                    </div>
+                    <div v-else class="editable-cell-text-wrapper">
+                        {{ editableData[selectedTaskID].description || ' ' }}
+                        <edit-outlined class="editable-cell-icon" @click="editDescription" />
+                    </div>
+                </div>
+                <a-divider />
+                <task-drawer :task="editableData[selectedTaskID]"/>
+            </a-drawer>
         </a-collapse-panel>
     </a-collapse>
 </template>
 
 <script>
-    import { ref, getCurrentInstance, reactive, computed } from 'vue'
-    import { CheckOutlined, EditOutlined, UserOutlined, DownOutlined } from '@ant-design/icons-vue'
-    import { cloneDeep } from 'lodash-es'
+    import { ref, getCurrentInstance, reactive, computed, toRefs } from 'vue'
+    import { CheckOutlined, EditOutlined, UserOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
+    import { message } from 'ant-design-vue'
+    import { cloneDeep, debounce } from 'lodash-es'
     import dayjs from 'dayjs'
+    import TaskDrawer from "@/components/TaskDrawer.vue"
 
     let customParseFormat = require('dayjs/plugin/customParseFormat')
     dayjs.extend(customParseFormat)
@@ -202,8 +315,8 @@
         width: 100
     }, {
         title: '接受者',
-        dataIndex: 'acceptors',
-        key: 'acceptors',
+        dataIndex: 'accepters',
+        key: 'accepters',
         resizable: true,
         width: 150
     }])
@@ -262,6 +375,28 @@
         [0],
     ])
 
+    const taskPriorityMap = ref([
+        {
+            msg: '个人事务',
+            color: 'cyan',
+        }, {
+            msg: '班级事务',
+            color: 'blue',
+        }, {
+            msg: '学生会事务',
+            color: 'orange',
+        }, {
+            msg: '年级事务',
+            color: 'pink',
+        }, {
+            msg: '学院事务',
+            color: 'green',
+        }, {
+            msg: '校级事务',
+            color: 'purple',
+        }
+    ])
+    
     export default {
         name: "Taskgroups",
         props: ['taskgroups'],
@@ -270,6 +405,8 @@
             EditOutlined,
             UserOutlined,
             DownOutlined,
+            PlusOutlined,
+            TaskDrawer,
         },
         methods: {
             formatDate: function(stringDate) {
@@ -293,35 +430,36 @@
         },
         setup() {
             const { appContext } = getCurrentInstance();
+            const $store = appContext.config.globalProperties.$store
+            const $http = appContext.config.globalProperties.$http
 
             const activeKey = ref(['1']);
             const editableData = reactive({})
 
-            let selectedTaskID;
+            const selectedTaskID = reactive(ref(1));
             let selectedTaskgroupIndex;
             const editName = reactive(ref(false));
             
             const save = (taskID, taskgroupIndex, colName) => {
-                appContext.config.globalProperties.$store.dispatch(
+                $store.dispatch(
                     'updateTask',
                     {
-                        colName: colName,
-                        taskgroupIndex: taskgroupIndex,
                         taskID: taskID,
-                        data: editableData[taskID]
+                        colName: colName,
+                        data: editableData[taskID][colName],
                     }
                 )
-                editName = false
+                editName.value = false
                 delete editableData[taskID]
             }
 
             const edit = (taskID, taskgroupIndex, colName) => {
-                const taskgroups = appContext.config.globalProperties.$store.state.taskgroups
+                const taskgroups = $store.state.taskgroups
                 const tasks = taskgroups[taskgroupIndex].tasks
                 editableData[taskID] = cloneDeep(tasks.filter(item => taskID === item.id)[0]);
-                selectedTaskID = taskID
+                selectedTaskID.value = taskID
                 selectedTaskgroupIndex = taskgroupIndex
-                editName = (colName === 'name')
+                editName.value = (colName === 'name')
             }
 
             const handleResizeColumn = (w, column) => {
@@ -339,11 +477,13 @@
             };
 
 
-            const selectedInitiator = reactive({})
+            const selectedInitiator = reactive({
+                data: [],
+            })
             const userDrawerVisible = reactive(ref(false));
 
             const showUserDrawer = (taskID, taskgroupIndex, initiatorIndex) => {
-                const taskgroups = appContext.config.globalProperties.$store.state.taskgroups
+                const taskgroups = $store.state.taskgroups
                 selectedInitiator["data"] = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).initiators[initiatorIndex])
                 userDrawerVisible.value = true
             };
@@ -354,28 +494,27 @@
 
 
             const statusDropdownVisibilityChange = (taskID, taskgroupIndex) => {
-                selectedTaskID = taskID
+                selectedTaskID.value = taskID
                 selectedTaskgroupIndex = taskgroupIndex
             }
 
             const onChangeTaskState = (event) => {
                 edit(selectedTaskID, selectedTaskgroupIndex, 'state')
                 if (event.key == 7 
-                    && (editableData[selectedTaskID].type & 2) == 1 
-                    && (editableData[selectedTaskID].state == 3 || editableData[selectedTaskID].state == 4 || editableData[selectedTaskID].state == 6)
+                    && (editableData[selectedTaskID.value].type & 2) == 1 
+                    && (editableData[selectedTaskID.value].state == 3 || editableData[selectedTaskID.value].state == 4 || editableData[selectedTaskID.value].state == 6)
                     )
-                    editableData[selectedTaskID].state = 5
+                    editableData[selectedTaskID.value].state = 5
                 else
-                    editableData[selectedTaskID].state = event.key
+                    editableData[selectedTaskID.value].state = event.key
                 save(selectedTaskID, selectedTaskgroupIndex, 'state')
             }
 
 
             const accepterDrawerVisible = reactive(ref(false))
             const selectedAccepter = reactive({})
-
             const showAccepterDrawer = (taskID, taskgroupIndex, accepterIndex) => {
-                const taskgroups = appContext.config.globalProperties.$store.state.taskgroups
+                const taskgroups = $store.state.taskgroups
                 selectedAccepter["data"] = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).accepters[accepterIndex])
                 accepterDrawerVisible.value = true
             };
@@ -385,11 +524,199 @@
             }
 
 
+            const addInitDrawerVisible = reactive(ref(false))
+            const initiatorAdderState = reactive({
+                initiatorData: [],
+                initiatorValue: [],
+                initiatorFetching: false,
+            })
+            const showAddInitiatorDrawer = (taskID, taskgroupIndex) => {
+                const taskgroups = $store.state.taskgroups
+                initiatorAdderState.initiatorData = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).initiators)
+                    .map(user => ({
+                        label: `${ user.name }`,
+                        value: user.id,
+                    }))
+                initiatorAdderState.initiatorValue = cloneDeep(initiatorAdderState.initiatorData)
+                addInitDrawerVisible.value = true
+            }
+
+            const onAddinitiatorDrawerClose = () => {
+                addInitDrawerVisible.value = false
+            }
+
+            const onAddinitiatorDrawerSave = (taskID) => {
+                let params = {
+                    task_id: taskID,
+                    initiators: initiatorAdderState.initiatorValue.map(user => (user.value))
+                }
+                $http.put("/api/task/initiator", params)
+                .then(response => {
+                    let res = response.data
+                    if (res.code !== 200)
+                        message.warning("Fail to update initiators")
+                    else {
+                        message.info("Update successed")
+                        let playload = {
+                            workspace_id: $store.state.selectedWorkspaceID[0]
+                        }
+                        $store.dispatch({
+                            type:'refreshTaskgroups', 
+                            params: playload
+                        })
+                    }
+                })
+                .catch(() => {
+                    message.error("Fail to update initiators")
+                })
+
+                addInitDrawerVisible.value = false
+            }
+
+        
+            const addAccepterDrawerVisible = reactive(ref(false))
+            const accepterAdderState = reactive({
+                accepterData: [],
+                accepterValue: [],
+                accepterFetching: false,
+            })
+            const showAddAccepterDrawer = (taskID, taskgroupIndex) => {
+                const taskgroups = $store.state.taskgroups
+                accepterAdderState.accepterData = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).accepters)
+                    .map(user => ({
+                        label: `${ user.name }`,
+                        value: user.id,
+                    }))
+                accepterAdderState.accepterValue = cloneDeep(accepterAdderState.accepterData)
+                addAccepterDrawerVisible.value = true
+            }
+            const onAddAccepterDrawerClose = () => {
+                addAccepterDrawerVisible.value = false
+            }
+            const onAddAccepterDrawerSave = (taskID, taskState) => {
+                let params = {
+                    task_id: taskID,
+                    accepters: accepterAdderState.accepterValue.map(user => (user.value))
+                }
+                $http.put("/api/task/accepter", params)
+                .then(response => {
+                    let res = response.data
+                    if (res.code !== 200)
+                        message.warning("Fail to update initiators")
+                    else {
+                        message.info("Update successed")
+                        let playload = {
+                            workspace_id: $store.state.selectedWorkspaceID[0]
+                        }
+                        if (params.accepters.length > 0 && taskState === 2) {
+                            $store.dispatch(
+                                'updateTask',
+                                {
+                                    taskID: taskID,
+                                    colName: 'state',
+                                    data: 3,
+                                }
+                            )
+                        }
+                        else if (params.accepters.length == 0) {
+                            $store.dispatch(
+                                'updateTask',
+                                {
+                                    taskID: taskID,
+                                    colName: 'state',
+                                    data: 2,
+                                }
+                            )
+                        }
+                            
+                        $store.dispatch({
+                            type:'refreshTaskgroups', 
+                            params: playload
+                        })
+                    }
+                })
+                .catch(() => {
+                    message.error("Fail to update initiators")
+                })
+
+                addAccepterDrawerVisible.value = false
+            }
+
+
+            let lastFetchContent = "";
+            const fetchAccepters = debounce((value) => {
+                value = value.trim()
+                if (value !== lastFetchContent && value !== '') {
+                    lastFetchContent = value
+                    initiatorAdderState.initiatorData = []
+                    accepterAdderState.accepterData= []
+                    initiatorAdderState.initiatorFetching = true
+                    accepterAdderState.accepterFetching = true
+                    $http.get("/api/user", { params: { identity: value } })
+                    .then(response => {
+                        let res = response.data
+                        if (res.result) {
+                            initiatorAdderState.initiatorData = res.result.map(user => ({
+                                label: `${ user.name }`,
+                                value: user.id,
+                            }))
+                            accepterAdderState.accepterData = cloneDeep(initiatorAdderState.initiatorData)
+                        }
+                        initiatorAdderState.initiatorFetching = false
+                        accepterAdderState.accepterFetching = false
+                    })
+                }
+            }, 300)
+
+
+            const onChangePriority = ({key}) => {
+                $store.dispatch(
+                    'updateTask',
+                    {
+                        taskID: selectedTaskID.value,
+                        colName: 'priority',
+                        data: key,
+                    }
+                )
+            }
+
+
+            const detailDrawerVisibility = reactive(ref(false))
+            const showTaskDetailDrawer = (taskID, taskgroupIndex) => {
+                edit(taskID, taskgroupIndex, "Detail")
+                detailDrawerVisibility.value = true
+            }
+
+            const onDetailDrawerClose = () => {            
+                detailDrawerVisibility.value = false
+            }
+
+            const editDes = reactive(ref(false))
+            const editDescription = () => {
+                editDes.value = true
+            }
+
+            const saveDescription = () => {
+                $store.dispatch(
+                    'updateTask',
+                    {
+                        taskID: selectedTaskID.value,
+                        colName: 'description',
+                        data: editableData[selectedTaskID.value].description,
+                    }
+                )
+                editDes.value = false
+            }
+
             return {
                 activeKey,
                 columns,
+                taskPriorityMap,
+
                 editableData,
                 editName,
+                selectedTaskID,
+
                 save,
                 edit,
                 handleResizeColumn,
@@ -409,6 +736,29 @@
                 selectedAccepter,
                 showAccepterDrawer,
                 onAccepterDrawerClose,
+
+                addInitDrawerVisible,
+                showAddInitiatorDrawer,
+                onAddinitiatorDrawerClose,
+                onAddinitiatorDrawerSave,
+                fetchAccepters,
+                ...toRefs(initiatorAdderState),
+
+                addAccepterDrawerVisible,
+                showAddAccepterDrawer,
+                onAddAccepterDrawerClose,
+                onAddAccepterDrawerSave,
+                ...toRefs(accepterAdderState),
+
+                onChangePriority,
+
+                detailDrawerVisibility,
+                showTaskDetailDrawer,
+                onDetailDrawerClose,
+
+                editDes,
+                editDescription,
+                saveDescription,
             }
         }
     }

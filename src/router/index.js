@@ -12,7 +12,7 @@ const routes = [
   {
     path: '/personalhome',
     name: 'PersonalHome',
-    component: PersonalHome
+    component: PersonalHome,
   },
   {
     path: '/register',

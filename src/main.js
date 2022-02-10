@@ -225,15 +225,16 @@ const store = createStore({
         },
         updateTask({ commit, state }, playload) {
             let params = {
+                task_id: playload.taskID,
                 attr: playload.colName,
-                task: playload.data
+                new_val: playload.data
             }
             app.config.globalProperties.$http.put("/api/task", params)
-            .then(() => {
-                let params = {workspace_id: state.selectedWorkspaceID[0]}
+            .then((response) => {
+                let p = {workspace_id: state.selectedWorkspaceID[0]}
                 app.config.globalProperties.$store.dispatch({
                     type: 'refreshTaskgroups',
-                    params: params
+                    params: p
                 })
             },
             () => {
