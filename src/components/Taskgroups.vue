@@ -472,8 +472,8 @@
             };
 
             const onChange = (value, dateString) => {
-                editableData[selectedTaskID].ddl = value.format("YYYY-MM-DD HH:mm:ss")
-                save(selectedTaskID, selectedTaskgroupIndex, 'ddl')
+                editableData[selectedTaskID.value].ddl = value.format("YYYY-MM-DD HH:mm:ss")
+                save(selectedTaskID.value, selectedTaskgroupIndex, 'ddl')
             };
 
 
@@ -499,7 +499,8 @@
             }
 
             const onChangeTaskState = (event) => {
-                edit(selectedTaskID, selectedTaskgroupIndex, 'state')
+                edit(selectedTaskID.value, selectedTaskgroupIndex, 'state')
+                console.log(editableData)
                 if (event.key == 7 
                     && (editableData[selectedTaskID.value].type & 2) == 1 
                     && (editableData[selectedTaskID.value].state == 3 || editableData[selectedTaskID.value].state == 4 || editableData[selectedTaskID.value].state == 6)
@@ -507,7 +508,7 @@
                     editableData[selectedTaskID.value].state = 5
                 else
                     editableData[selectedTaskID.value].state = event.key
-                save(selectedTaskID, selectedTaskgroupIndex, 'state')
+                save(selectedTaskID.value, selectedTaskgroupIndex, 'state')
             }
 
 
