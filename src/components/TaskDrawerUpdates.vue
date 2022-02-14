@@ -1,7 +1,7 @@
 <template>
     <a-comment>
         <template #avatar>
-            <a-avatar v-if='user.avatar_path' :scr='user.avatar_path' />
+            <a-avatar v-if='user && user.avatar_path' :scr='user.avatar_path' />
             <a-avatar v-else style="backgroud-color: #1890ff">
                 <template #icon><user-outlined /></template>
             </a-avatar>
@@ -135,10 +135,18 @@ export default {
         
         const user = reactive(ref($store.state.user))
         if (user.value === null) {
-            message.warn("登录超时！")
-            setTimeout(() => {
-                $router.push("/")
-            }, 1000)
+            if (sessionStorage.getItem('user') !== null) {
+                $store.commit({
+                    type: 'setUser',
+                    user: JSON.parse(sessionStorage.getItem('user'))
+                })
+            }
+            else {
+                message.warn("登录超时！")
+                setTimeout(() => {
+                    $router.push("/")
+                }, 1000)
+            }
         }
 
         const value = ref('')

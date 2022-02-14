@@ -44,8 +44,8 @@ export default defineComponent({
         const { appContext } = getCurrentInstance();
 
         const formState = reactive ({
-                identity: '',
-                password: '',
+            identity: '',
+            password: '',
         })
 
         const disabled = computed(() => {
@@ -57,6 +57,7 @@ export default defineComponent({
             qs.stringify(formState))
             if (res.code === 1000) {
                 localStorage.removeItem("Token")
+                sessionStorage.removeItem("user")
                 message.error("用户名不存在 / 密码不正确！")
             }
             else if (res.code === 200) {
@@ -65,6 +66,7 @@ export default defineComponent({
                     type: 'setUser',
                     user: res.result.user
                 })
+                sessionStorage.setItem("user", JSON.stringify(res.result.user))
                 appContext.config.globalProperties.$router.push("/personalhome")
             }
             else {

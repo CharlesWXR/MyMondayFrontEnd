@@ -2,22 +2,35 @@
     <div>
         <a-typography-text strong>已选取 {{ selectedOutputs.data.length }} 个输出文件</a-typography-text>
         <a v-for='output in selectedOutputs.data' :key="output.id" @click='getAttachment(output.name)'>
-            <div>{{ output.name }}</div>
+            <div style="margin-top: 5px;">{{ output.name }}</div>
         </a>
     </div>
-    <a-button @click="showModal">
+    <a-button @click="showModal" style="margin-top: 10px;">
         选取文件作为任务输出
     </a-button>
     <a-modal
         v-model:visible="modalVisible"
-        title="Title"
+        :title="'选择输出文件： 已选中' + outputState.selectedRowKeys.length + '项'"
         :confirm-loading="confirmLoading"
         @ok="handleOk"
     >
-        <a-table :row-selection="rowSelection" :columns="columns" :data-source="data">
-            <template #bodyCell="{ column, text }">
+        <a-table 
+            :row-selection="{
+                selectedRowKeys: outputState.selectedRowKeys,
+                onChange: onSelectChange,
+            }"
+            :columns="columns" 
+            :data-source="outputState.outputs"
+            :pagination="false"
+            :scroll="{ y: 500 }"
+            :row-key="attachment => attachment.id"
+        >
+            <template #bodyCell="{ column, text, record }">
                 <template v-if="column.dataIndex === 'name'">
-                    <a>{{ text }}</a>
+                    <a @click="getAttachment(record.path.split('/')[1])">{{ text }}</a>
+                </template>
+                <template v-if="column.dataIndex === 'version'">
+                    {{ parseInt(text) + 1 }}
                 </template>
             </template>
         </a-table>
@@ -27,14 +40,22 @@
 <script>
 import { reactive, getCurrentInstance, ref } from 'vue'
 import { message } from 'ant-design-vue'
+import { uniqBy } from 'lodash'
 
-const columns = [{
+const columns = reactive([{
     title: '文件名称',
     dataIndex: 'name',
+    filters: [{
+    }],
+    onFilter: (value, record) => record.name === value,
 }, {
     title: '文件版本',
     dataIndex: 'version',
-}]
+    sorter: {
+        compare: (a,b) => a.version - b.version,
+        multiple: 2,
+    }
+}])
 
 export default {
     name: 'TaskDrawerOutput',
@@ -42,6 +63,7 @@ export default {
     components: {
         
     },
+    emits: [],
     methods: {
         getAttachment(attachmentName) {
             this.$http.get('/api/attachment', 
@@ -60,7 +82,7 @@ export default {
                 document.body.removeChild(downloadElement)
                 URL.revokeObjectURL(objectUrl)
             })
-        }
+        },
     },
     setup(props) {
         const { appContext } = getCurrentInstance();
@@ -84,34 +106,65 @@ export default {
 
         const modalVisible = ref(false)
         const confirmLoading = ref(false)
-        
+        const outputState = reactive({
+            selectedRowKeys: [],
+            outputs: [],
+            loading: false,
+        })
+
         const showModal = () => {
-            modalVisible.value = true;
+            modalVisible.value = true
+            $http.get('/api/attachment/' + props.taskID)
+            .then(response => {
+                let res = response.data
+                if (res.code === 200) {
+                    outputState.outputs = res.result
+                    outputState.outputs.forEach((output, index, arr) => {
+                        if (output.version > 0)
+                            arr[index].name = output.name.replace(/-[\d]+(\.[^\.\W]+)$/, '$1')
+                    })
+                    columns[0].filters = uniqBy(outputState.outputs, 'name').map(item => ({text: item.name, value: item.name}))
+                    outputState.selectedRowKeys = selectedOutputs.data.map(item => (item.id))
+                }
+                else {
+                    message.warn("Unexpected error happened!")
+                }
+            })
         };
 
         const handleOk = () => {
-            confirmLoading.value = true;
-            setTimeout(() => {
-                modalVisible.value = false;
-                confirmLoading.value = false;
-            }, 2000);
-        };
+            confirmLoading.value = true
+            let params = {
+                task_id: props.taskID,
+                attachment_id: outputState.selectedRowKeys,
+            }
+            $http.put('/api/attachment/output', params)
+            .then(response => {
+                let res = response.data
+                if (res.code === 200) {
+                    $http.get('/api/attachment/output', {params: {task_id: props.taskID}})
+                    .then (response => {
+                        let res = response.data
+                        if (res.code === 200) {
+                            selectedOutputs.data = res.result
+                        }
+                        else
+                            message.warn("Unexpected error happened")
+                    })
+                }
 
+                modalVisible.value = false
+                confirmLoading.value = false
+            })
+            .catch(() => {
+                modalVisible.value = false
+                confirmLoading.value = false
+            })
+        }
 
-        const outputState = reactive({
-            selectedRowKeys: [],
-            loading: false,
-        })
-        const rowSelection = {
-            onChange: (selectedRowKeys, selectedRows) => {
-                console.log(`selectedRowKeys: ${selectedRowKeys}`, 'selectedRows: ', selectedRows);
-            },
-            getCheckboxProps: record => ({
-                disabled: record.name === 'Disabled User',
-                // Column configuration not to be checked
-                name: record.name,
-            }),
-        };
+        const onSelectChange = (selectedRowKeys, selectedRows) => {
+            outputState.selectedRowKeys = selectedRowKeys
+        }
 
         return {
             columns,
@@ -123,7 +176,8 @@ export default {
             handleOk,
 
             outputState,
-            rowSelection,
+            
+            onSelectChange,
         }
     }
 }
