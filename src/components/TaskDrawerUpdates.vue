@@ -122,7 +122,6 @@ export default {
                 document.body.removeChild(downloadElement)
                 URL.revokeObjectURL(objectUrl)
             })
-            // window.open("http://localhost:8088/api/attachment?attachment_name=" + attachmentName)
         }
     },
     computed: {
