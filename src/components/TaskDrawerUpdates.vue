@@ -134,20 +134,23 @@ export default {
         const $router = appContext.config.globalProperties.$router
         
         const user = reactive(ref($store.state.user))
-        if (user.value === null) {
-            if (sessionStorage.getItem('user') !== null) {
-                $store.commit({
-                    type: 'setUser',
-                    user: JSON.parse(sessionStorage.getItem('user'))
-                })
-            }
-            else {
-                message.warn("登录超时！")
-                setTimeout(() => {
-                    $router.push("/")
-                }, 1000)
+        const updateUser = () => {
+            if (user.value === null) {
+                if (sessionStorage.getItem('user') !== null) {
+                    $store.commit({
+                        type: 'setUser',
+                        user: JSON.parse(sessionStorage.getItem('user'))
+                    })
+                }
+                else {
+                    message.warn("登录超时！")
+                    setTimeout(() => {
+                        $router.push("/")
+                    }, 1000)
+                }
             }
         }
+
 
         const value = ref('')
         const submitting = ref(false)
@@ -156,20 +159,24 @@ export default {
             data: []
         })
 
-        $http.get('/api/comment', {params: {task_id: props.taskID}})
-        .then (response => {
-            let res = response.data
-            if (res.code === 200) {
-                updates.data = res.result
-            }
-            else {
-                message.info('Unknown error happened')
-            }
-        })
-        .catch (() => {
-            message.error("Unexpected error happened")
-        })
+        const updateUpdates = () => {
+            $http.get('/api/comment', {params: {task_id: props.taskID}})
+            .then (response => {
+                let res = response.data
+                if (res.code === 200) {
+                    updates.data = res.result
+                }
+                else {
+                    message.info('Unknown error happened')
+                }
+            })
+            .catch (() => {
+                message.error("Unexpected error happened")
+            })
+        }
 
+        updateUser()
+        updateUpdates()
 
         const fileList = ref([]);
 
@@ -197,19 +204,7 @@ export default {
 
             $http.post('/api/comment', formData)
             .then(response => {
-                $http.get('/api/comment', {params: {task_id: props.taskID}})
-                .then (response => {
-                    let res = response.data
-                    if (res.code === 200) {
-                        updates.data = res.result
-                    }
-                    else {
-                        message.info('Unknown error happened')
-                    }
-                })
-                .catch (() => {
-                    message.error("Unexpected error happened")
-                })
+                updateUpdates()
             })
 
             submitting.value = false
@@ -218,11 +213,14 @@ export default {
 
         return {
             user,
+            updateUser,
+
             value,
             submitting,
 
             dayjs,
             updates,
+            updateUpdates,
 
             fileList,
             handleRemove,

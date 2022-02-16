@@ -37,7 +37,7 @@
                     <!-- 任务名 -->
                     <template v-else-if="column.dataIndex === 'name'">
                         <div class="editable-cell">
-                            <div v-if="editName" class="editable-cell-input-wrapper">
+                            <div v-if="editName && editableData[record.id]" class="editable-cell-input-wrapper">
                                 <a-input v-model:value="editableData[record.id].name" @pressEnter="save(record.id, index, 'name')" />
                                 <check-outlined class="editable-cell-icon-check" @click="save(record.id, index, 'name')" />
                             </div>
@@ -239,6 +239,7 @@
                 :visible="detailDrawerVisibility"
                 @close="onDetailDrawerClose"
                 size="large"
+                :key="selectedTaskID"
             >
                 <a-typography-title :level='2'>{{ editableData[selectedTaskID].name }}</a-typography-title>
                 <div class="editable-cell">
@@ -275,7 +276,7 @@
         dataIndex: 'state',
         key: 'state',
         resizable: true,
-        width: 100
+        width: 130
     }, {
         title: '任务名',
         dataIndex: 'name',
@@ -500,9 +501,9 @@
 
             const onChangeTaskState = (event) => {
                 edit(selectedTaskID.value, selectedTaskgroupIndex, 'state')
-                console.log(editableData)
+                console.log(event.key, editableData[selectedTaskID.value].type & 2)
                 if (event.key == 7 
-                    && (editableData[selectedTaskID.value].type & 2) == 1 
+                    && (editableData[selectedTaskID.value].type & 2) == 2 
                     && (editableData[selectedTaskID.value].state == 3 || editableData[selectedTaskID.value].state == 4 || editableData[selectedTaskID.value].state == 6)
                     )
                     editableData[selectedTaskID.value].state = 5

@@ -1,4 +1,21 @@
 <template>
+    <div v-if="dependencyOutputs.data && dependencyOutputs.data.length > 0">
+        <div v-for="(output, index) in dependencyOutputs.data" :key="index">
+            <strong>
+                来自前置任务 {{ output.task.name }} (
+                <a-badge 
+                    :status="taskStatusMap[output.task.state].status"
+                    :color="taskStatusMap[output.task.state].color"
+                    :text="taskStatusMap[output.task.state].text" 
+                />
+                ) :
+                </strong>
+            <a v-for='o in output.outputs' :key="o.id">
+                <div style="margin-top: 5px;">{{ o.name }}</div>
+            </a>
+            <a-divider />
+        </div>
+    </div>
     <div>
         <a-typography-text strong>已选取 {{ selectedOutputs.data.length }} 个输出文件</a-typography-text>
         <a v-for='output in selectedOutputs.data' :key="output.id" @click='getAttachment(output.name)'>
@@ -57,6 +74,49 @@ const columns = reactive([{
     }
 }])
 
+const taskStatusMap = ref([
+        {
+            status: 'default',
+            color: 'gray',
+            text: '已归档',
+        },
+        {
+            status: 'default',
+            color: '#2db7f5',
+            text: '已初始化',
+        },
+        {
+            status: 'warning',
+            color: 'gold',
+            text: '未分配',
+        },
+        {
+            status: 'processing',
+            color: 'purple',
+            text: '挂起中',
+        },
+        {
+            status: 'processing',
+            color: 'blue',
+            text: '处理中',
+        },
+        {
+            status: 'default',
+            color: 'magenta',
+            text: '等待审核',
+        }, 
+        {
+            status: 'processing',
+            color: 'purple',
+            text: '审核退回',
+        },
+        {
+            status: 'success',
+            color: '',
+            text: '已完成',
+        }
+    ])
+
 export default {
     name: 'TaskDrawerOutput',
     props: ['taskID'],
@@ -86,9 +146,7 @@ export default {
     },
     setup(props) {
         const { appContext } = getCurrentInstance();
-        const $store = appContext.config.globalProperties.$store
         const $http = appContext.config.globalProperties.$http
-        const $router = appContext.config.globalProperties.$router
 
         const selectedOutputs = reactive ({
             data: []
@@ -102,6 +160,18 @@ export default {
             }
             else
                 message.warn("Unexpected error happened")
+        })
+
+        const dependencyOutputs = reactive ({
+            data: []
+        })
+
+        $http.get('/api/dependency/output/' + props.taskID)
+        .then (response => {
+            let res = response.data
+            if (res.code === 200) {
+                dependencyOutputs.data = res.result
+            }
         })
 
         const modalVisible = ref(false)
@@ -168,8 +238,12 @@ export default {
 
         return {
             columns,
+            taskStatusMap,
 
             selectedOutputs,
+
+            dependencyOutputs,
+
             modalVisible,
             confirmLoading,
             showModal,

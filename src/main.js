@@ -164,7 +164,7 @@ const store = createStore({
             }, 1000 * 10)
         },
         refreshTaskgroups({ commit }, playload) {
-            app.config.globalProperties.$http.post("/api/task",
+            app.config.globalProperties.$http.post("/api/taskgroup",
             qs.stringify(playload.params))
             .then ((res) => {
                 const r = res.data
