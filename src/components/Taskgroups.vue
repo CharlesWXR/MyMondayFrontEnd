@@ -2,7 +2,19 @@
     <a-collapse v-for="(taskgroup, index) in taskgroups" :key="taskgroup.id" v-model:activeKey="activeKey" :bordered="false">
         <a-collapse-panel :key="taskgroup.id">
             <template #header>
-                <a-divider style="font-size: 2rem;">{{ taskgroup.name }}</a-divider>
+                <a-divider>
+                    <a-typography-title :level="3" class="editable-cell">
+                        <div v-if="editableTaskgroupNames && editableTaskgroupNames[taskgroup.id]" class="editable-cell-input-wrapper">
+                            <a-input v-model:value="editableTaskgroupNames[taskgroup.id]" @pressEnter="saveTaskgroupName(taskgroup.id)" />
+                            <check-outlined class="editable-cell-icon-check" @click="saveTaskgroupName(taskgroup.id)" />
+                        </div>
+                        <div v-else class="editable-cell-text-wrapper">
+                            {{ taskgroup.name || ' ' }}
+                            <edit-outlined class="editable-cell-icon" @click="editTaskgroupName(taskgroup.id, taskgroup.name)" />
+                        </div>
+                    </a-typography-title>
+                </a-divider>
+                
             </template>
             <a-typography-paragraph style="text-align: center;">简介：{{ taskgroup.description }}</a-typography-paragraph>
 
@@ -282,10 +294,11 @@
 </template>
 
 <script>
-    import { ref, getCurrentInstance, reactive, toRefs } from 'vue'
+    import { ref, getCurrentInstance, reactive, toRefs, watch } from 'vue'
     import { CheckOutlined, EditOutlined, UserOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons-vue'
     import { message } from 'ant-design-vue'
     import { cloneDeep, debounce } from 'lodash-es'
+    import qs from 'qs'
     import dayjs from 'dayjs'
     import TaskDrawer from "@/components/TaskDrawer.vue"
 
@@ -451,7 +464,7 @@
                 return res ? res.name : ""
             },
         },
-        setup() {
+        setup(props) {
             const { appContext } = getCurrentInstance();
             const $store = appContext.config.globalProperties.$store
             const $http = appContext.config.globalProperties.$http
@@ -778,6 +791,30 @@
                 }
             }
 
+            const editableTaskgroupNames = reactive({})
+
+            const editTaskgroupName = (taskgroupID, taskgroupName) => {
+                editableTaskgroupNames[taskgroupID] = taskgroupName
+            }
+            const saveTaskgroupName = (taskgroupID) => {
+                $http.put("/api/taskgroup/" + taskgroupID, 
+                qs.stringify({attr: "name", new_val: editableTaskgroupNames[taskgroupID]}))
+                .then(response => {
+                    let res = response.data
+                    if (res.code === 200) {
+                        let playload = {
+                            workspace_id: $store.state.selectedWorkspaceID[0]
+                        }
+                        $store.dispatch({
+                            type:'refreshTaskgroups', 
+                            params: playload
+                        })
+                    }
+                })
+                delete editableTaskgroupNames[taskgroupID]
+            }
+                        
+
             return {
                 activeKey,
                 columns,
@@ -831,6 +868,10 @@
 
                 createNewTask,
                 updateUser,
+
+                editableTaskgroupNames,
+                editTaskgroupName,
+                saveTaskgroupName,
             }
         }
     }
