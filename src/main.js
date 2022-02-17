@@ -20,7 +20,7 @@ app.use(ElementPlus)
 app.use(router)
 app.use(AntDesign)
 
-axios.defaults.baseURL = 'http://localhost:8088'
+axios.defaults.baseURL = 'http://117.89.60.239:8088'
 
 let loadingInstance = null
 axios.interceptors.request.use(config => {

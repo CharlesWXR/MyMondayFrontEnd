@@ -23,6 +23,7 @@
                 :data-source="taskgroup.tasks" 
                 :row-key="record => record.id" 
                 :pagination="false"
+                :scroll="{ x: 1500 }"
                 @resizeColumn="handleResizeColumn"
                 bordered 
             >
@@ -31,7 +32,7 @@
                     <template v-if="column.dataIndex === 'state'">
                         <a-dropdown @visibleChange="statusDropdownVisibilityChange(record.id, index)">
                             <a class='ant-dropdown-link' @click.prevent>
-                                <a-badge 
+                                <a-badge
                                     :status="taskStatusMap[record.state].status"
                                     :color="taskStatusMap[record.state].color"
                                     :text="taskStatusMap[record.state].text" />
@@ -533,7 +534,6 @@
 
             const onChangeTaskState = (event) => {
                 edit(selectedTaskID.value, selectedTaskgroupIndex, 'state')
-                console.log(event.key, editableData[selectedTaskID.value].type & 2)
                 if (event.key == 7 
                     && (editableData[selectedTaskID.value].type & 2) == 2 
                     && (editableData[selectedTaskID.value].state == 3 || editableData[selectedTaskID.value].state == 4 || editableData[selectedTaskID.value].state == 6)

@@ -194,6 +194,9 @@ export default {
 
         const formUpload = () => {
             let formData = new FormData();
+            if (user.value === null)
+                updateUser()
+                
             formData.set('user_id', user.value.id)
             formData.set('task_id', props.taskID)
             formData.set('content', value.value)
