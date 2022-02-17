@@ -2,7 +2,7 @@
     <a-collapse v-for="(taskgroup, index) in taskgroups" :key="taskgroup.id" v-model:activeKey="activeKey" :bordered="false">
         <a-collapse-panel :key="taskgroup.id">
             <template #header>
-                <a-divider style="font-size: 2rem;">{{ taskgroup.description }}</a-divider>
+                <a-divider style="font-size: 2rem;">{{ taskgroup.name }}</a-divider>
             </template>
             <a-typography-paragraph style="text-align: center;">简介：{{ taskgroup.description }}</a-typography-paragraph>
 
@@ -89,30 +89,6 @@
                                 </a>
                             </div>
                         </a-avatar-group>
-                        <!-- 任务发起人用户信息drawer -->
-                        <a-drawer
-                            title="用户信息"
-                            placement="right"
-                            :visible="userDrawerVisible"
-                            @close="onUserDrawerClose"
-                            size="large"
-                        >  
-                            <div style="justify-content: center; display: flex; padding: 15%; align-items: center;">
-                                <a-avatar v-if='selectedInitiator.data.avatar_path' :scr='selectedInitiator.data.avatar_path' :size="180" />  
-                                <a-avatar v-else style="backgroud-color: #1890ff" :size="180">
-                                    <template #icon><user-outlined /></template>
-                                </a-avatar>
-                            </div>
-                            <a-descriptions bordered>
-                                <a-descriptions-item :span='2' label='姓名'>{{ selectedInitiator.data.name }}</a-descriptions-item>
-                                <a-descriptions-item :span='2' label='学号/工号'>{{ selectedInitiator.data.staff_id }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='邮箱'>{{  selectedInitiator.data.email }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='QQ'>{{  selectedInitiator.data.qq }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='联系电话'>{{  selectedInitiator.data.phone }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='所在部门'>{{ getDepartmentName(selectedInitiator.data.department_id) }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='职务'>{{  selectedInitiator.data.title }}</a-descriptions-item>
-                            </a-descriptions>
-                        </a-drawer>
                         <!-- 添加任务发起人drawer -->
                         <a-drawer
                             title="添加任务发起人"
@@ -120,6 +96,7 @@
                             :visible="addInitDrawerVisible"
                             @close="onAddinitiatorDrawerClose"
                             size="large"
+                            :key="record.id"
                         >
                             <template #extra>
                                 <a-button type='primary' style="margin-right: 10px" @click="onAddinitiatorDrawerSave(record.id)">保存修改</a-button>
@@ -150,8 +127,27 @@
                             </a>
                             <template #overlay>
                                 <a-menu @click="onChangePriority">
-                                    <a-menu-item v-for="(priority, index) in taskPriorityMap" :key="index">
+                                    <!--a-menu-item v-for="(priority, index) in taskPriorityMap" :key="index">
                                         <a-tag :color="priority.color">{{ priority.msg }}</a-tag>
+                                    </a-menu-item -->
+                                    <!-- 循环展开提高渲染效率 -->
+                                    <a-menu-item :key="0">
+                                        <a-tag color="cyan">个人事务</a-tag>
+                                    </a-menu-item>
+                                    <a-menu-item :key="1">
+                                        <a-tag color="blue">班级事务</a-tag>
+                                    </a-menu-item>
+                                    <a-menu-item :key="2">
+                                        <a-tag color="orange">学生会事务</a-tag>
+                                    </a-menu-item>
+                                    <a-menu-item :key="3">
+                                        <a-tag color="pink">年级事务</a-tag>
+                                    </a-menu-item>
+                                    <a-menu-item :key="4">
+                                        <a-tag color="green">学院事务</a-tag>
+                                    </a-menu-item>
+                                    <a-menu-item :key="5">
+                                        <a-tag color="purple">校级事务</a-tag>
                                     </a-menu-item>
                                 </a-menu>
                             </template>
@@ -177,61 +173,39 @@
                                     </a-tooltip>
                                 </a>
                             </div>
-                        </a-avatar-group>
-                        <a-drawer
-                            title="用户信息"
-                            placement="right"
-                            :visible="accepterDrawerVisible"
-                            @close="onAccepterDrawerClose"
-                            size="large"
-                        >  
-                            <div style="justify-content: center; display: flex; padding: 15%; align-items: center;">
-                                <a-avatar v-if='selectedAccepter.data.avatar_path' :scr='selectedAccepter.data.avatar_path' :size="180" />  
-                                <a-avatar v-else style="backgroud-color: #1890ff" :size="180">
-                                    <template #icon><user-outlined /></template>
-                                </a-avatar>
-                            </div>
-                            <a-descriptions bordered>
-                                <a-descriptions-item :span='2' label='姓名'>{{ selectedAccepter.data.name }}</a-descriptions-item>
-                                <a-descriptions-item :span='2' label='学号/工号'>{{ selectedAccepter.data.staff_id }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='邮箱'>{{  selectedAccepter.data.email }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='QQ'>{{  selectedAccepter.data.qq }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='联系电话'>{{  selectedAccepter.data.phone }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='所在部门'>{{ getDepartmentName(selectedAccepter.data.department_id) }}</a-descriptions-item>
-                                <a-descriptions-item :span='3' label='职务'>{{  selectedAccepter.data.title }}</a-descriptions-item>
-                            </a-descriptions>
-                        </a-drawer>
-                        <!-- 添加任务发起人drawer -->
-                        <a-drawer
-                            title="添加任务接受者"
-                            placement="right"
-                            :visible="addAccepterDrawerVisible"
-                            @close="onAddAccepterDrawerClose"
-                            size="large"
-                        >
-                            <template #extra>
-                                <a-button type='primary' style="margin-right: 10px" @click="onAddAccepterDrawerSave(record.id, record.state)">保存修改</a-button>
-                                <a-button @click="onAddAccepterDrawerClose">放弃修改</a-button>
-                            </template>
-                            <a-select
-                                v-model:value="accepterValue"
-                                mode="multiple"
-                                label-in-value
-                                placeholder="选择需要添加的用户"
-                                style="width: 100%"
-                                :filter-option="false"
-                                :not-found-content="accepterFetching ? undefined : null"
-                                :options="accepterData"
-                                @search="fetchAccepters"
-                            >
-                                <template v-if="accepterFetching" #notFoundContent>
-                                    <a-spin size="small" />
-                                </template>
-                            </a-select>                  
-                        </a-drawer>
+                        </a-avatar-group>         
                     </template>
                 </template>
             </a-table>
+            <a-button type='primary' @click="createNewTask(taskgroup.id)">创建新任务</a-button>
+            <!-- 添加任务发起人drawer -->
+            <a-drawer
+                title="添加任务接受者"
+                placement="right"
+                :visible="addAccepterDrawerVisible"
+                @close="onAddAccepterDrawerClose"
+                size="large"
+            >
+                <template #extra>
+                    <a-button type='primary' style="margin-right: 10px" @click="onAddAccepterDrawerSave">保存修改</a-button>
+                    <a-button @click="onAddAccepterDrawerClose">放弃修改</a-button>
+                </template>
+                <a-select
+                    v-model:value="accepterValue"
+                    mode="multiple"
+                    label-in-value
+                    placeholder="选择需要添加的用户"
+                    style="width: 100%"
+                    :filter-option="false"
+                    :not-found-content="accepterFetching ? undefined : null"
+                    :options="accepterData"
+                    @search="fetchAccepters"
+                >
+                    <template v-if="accepterFetching" #notFoundContent>
+                        <a-spin size="small" />
+                    </template>
+                </a-select>                  
+            </a-drawer>
             <!-- 任务详细信息drawer -->
             <a-drawer
                 title="任务详细信息"
@@ -254,6 +228,54 @@
                 </div>
                 <a-divider />
                 <task-drawer :task="editableData[selectedTaskID]"/>
+            </a-drawer>
+            <!-- 接受者用户信息drawer -->
+            <a-drawer
+                title="用户信息"
+                placement="right"
+                :visible="accepterDrawerVisible"
+                @close="onAccepterDrawerClose"
+                size="large"
+            >  
+                <div style="justify-content: center; display: flex; padding: 15%; align-items: center;">
+                    <a-avatar v-if='selectedUser.data.avatar_path' :scr='selectedUser.data.avatar_path' :size="180" />  
+                    <a-avatar v-else style="backgroud-color: #1890ff" :size="180">
+                        <template #icon><user-outlined /></template>
+                    </a-avatar>
+                </div>
+                <a-descriptions bordered>
+                    <a-descriptions-item :span='2' label='姓名'>{{ selectedUser.data.name }}</a-descriptions-item>
+                    <a-descriptions-item :span='2' label='学号/工号'>{{ selectedUser.data.staff_id }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='邮箱'>{{  selectedUser.data.email }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='QQ'>{{  selectedUser.data.qq }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='联系电话'>{{  selectedUser.data.phone }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='所在部门'>{{ getDepartmentName(selectedUser.data.department_id) }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='职务'>{{  selectedUser.data.title }}</a-descriptions-item>
+                </a-descriptions>
+            </a-drawer>
+            <!-- 任务发起人用户信息drawer -->
+            <a-drawer
+                title="用户信息"
+                placement="right"
+                :visible="userDrawerVisible"
+                @close="onUserDrawerClose"
+                size="large"
+            >  
+                <div style="justify-content: center; display: flex; padding: 15%; align-items: center;">
+                    <a-avatar v-if='selectedUser.data.avatar_path' :scr='selectedUser.data.avatar_path' :size="180" />  
+                    <a-avatar v-else style="backgroud-color: #1890ff" :size="180">
+                        <template #icon><user-outlined /></template>
+                    </a-avatar>
+                </div>
+                <a-descriptions bordered>
+                    <a-descriptions-item :span='2' label='姓名'>{{ selectedUser.data.name }}</a-descriptions-item>
+                    <a-descriptions-item :span='2' label='学号/工号'>{{ selectedUser.data.staff_id }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='邮箱'>{{  selectedUser.data.email }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='QQ'>{{  selectedUser.data.qq }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='联系电话'>{{  selectedUser.data.phone }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='所在部门'>{{ getDepartmentName(selectedUser.data.department_id) }}</a-descriptions-item>
+                    <a-descriptions-item :span='3' label='职务'>{{  selectedUser.data.title }}</a-descriptions-item>
+                </a-descriptions>
             </a-drawer>
         </a-collapse-panel>
     </a-collapse>
@@ -437,7 +459,7 @@
             const activeKey = ref(['1']);
             const editableData = reactive({})
 
-            const selectedTaskID = reactive(ref(1));
+            const selectedTaskID = ref(1);
             let selectedTaskgroupIndex;
             const editName = reactive(ref(false));
             
@@ -478,14 +500,11 @@
             };
 
 
-            const selectedInitiator = reactive({
-                data: [],
-            })
             const userDrawerVisible = reactive(ref(false));
 
             const showUserDrawer = (taskID, taskgroupIndex, initiatorIndex) => {
                 const taskgroups = $store.state.taskgroups
-                selectedInitiator["data"] = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).initiators[initiatorIndex])
+                selectedUser["data"] = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).initiators[initiatorIndex])
                 userDrawerVisible.value = true
             };
 
@@ -514,10 +533,11 @@
 
 
             const accepterDrawerVisible = reactive(ref(false))
-            const selectedAccepter = reactive({})
+            const selectedUser = reactive({})
             const showAccepterDrawer = (taskID, taskgroupIndex, accepterIndex) => {
                 const taskgroups = $store.state.taskgroups
-                selectedAccepter["data"] = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).accepters[accepterIndex])
+                selectedTaskID.value = taskID
+                selectedUser["data"] = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).accepters[accepterIndex])
                 accepterDrawerVisible.value = true
             };
              
@@ -582,22 +602,26 @@
                 accepterValue: [],
                 accepterFetching: false,
             })
+            const selectedTaskState = ref(0)
             const showAddAccepterDrawer = (taskID, taskgroupIndex) => {
+                selectedTaskID.value = taskID
                 const taskgroups = $store.state.taskgroups
-                accepterAdderState.accepterData = cloneDeep(((taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]).accepters)
-                    .map(user => ({
+                let task = (taskgroups[taskgroupIndex].tasks).filter(item => taskID === item.id)[0]
+                accepterAdderState.accepterData = cloneDeep(task.accepters.map(user => ({
                         label: `${ user.name }`,
                         value: user.id,
-                    }))
+                    })
+                ))
+                selectedTaskState.value = task.state
                 accepterAdderState.accepterValue = cloneDeep(accepterAdderState.accepterData)
                 addAccepterDrawerVisible.value = true
             }
             const onAddAccepterDrawerClose = () => {
                 addAccepterDrawerVisible.value = false
             }
-            const onAddAccepterDrawerSave = (taskID, taskState) => {
+            const onAddAccepterDrawerSave = () => {
                 let params = {
-                    task_id: taskID,
+                    task_id: selectedTaskID.value,
                     accepters: accepterAdderState.accepterValue.map(user => (user.value))
                 }
                 $http.put("/api/task/accepter", params)
@@ -610,11 +634,11 @@
                         let playload = {
                             workspace_id: $store.state.selectedWorkspaceID[0]
                         }
-                        if (params.accepters.length > 0 && taskState === 2) {
+                        if (params.accepters.length > 0 && selectedTaskState.value === 2) {
                             $store.dispatch(
                                 'updateTask',
                                 {
-                                    taskID: taskID,
+                                    taskID: selectedTaskID.value,
                                     colName: 'state',
                                     data: 3,
                                 }
@@ -624,7 +648,7 @@
                             $store.dispatch(
                                 'updateTask',
                                 {
-                                    taskID: taskID,
+                                    taskID: selectedTaskID.value,
                                     colName: 'state',
                                     data: 2,
                                 }
@@ -710,6 +734,50 @@
                 editDes.value = false
             }
 
+            const createNewTask = (taskgroupID) => {
+                updateUser()
+                let params = {
+                    name: '新任务',
+                    type: 0,
+                    state: 2,
+                    taskgroup_id: taskgroupID,
+                    task_initiators: [$store.state.user.id],
+                }
+
+                $http.post('/api/task', params)
+                .then(response => {
+                    let res = response.data
+                    if (res.code === 200) {
+                        let playload = {
+                            workspace_id: $store.state.selectedWorkspaceID[0]
+                        }
+                        $store.dispatch({
+                            type:'refreshTaskgroups', 
+                            params: playload
+                        })
+                    }
+                    else
+                        message.warn("Unexpected error happened")
+                })
+            }
+
+            const updateUser = () => {
+                if ($store.state.user === null) {
+                    if (sessionStorage.getItem('user') !== null) {
+                        $store.commit({
+                            type: 'setUser',
+                            user: JSON.parse(sessionStorage.getItem('user'))
+                        })
+                    }
+                    else {
+                        message.warn("登录超时！")
+                        setTimeout(() => {
+                            $router.push("/")
+                        }, 1000)
+                    }
+                }
+            }
+
             return {
                 activeKey,
                 columns,
@@ -730,12 +798,11 @@
                 onChangeTaskState,
                 
                 userDrawerVisible,
-                selectedInitiator,
                 showUserDrawer,
                 onUserDrawerClose,
 
                 accepterDrawerVisible,
-                selectedAccepter,
+                selectedUser,
                 showAccepterDrawer,
                 onAccepterDrawerClose,
 
@@ -761,6 +828,9 @@
                 editDes,
                 editDescription,
                 saveDescription,
+
+                createNewTask,
+                updateUser,
             }
         }
     }

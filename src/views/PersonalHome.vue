@@ -14,10 +14,11 @@
                 </a-breadcrumb>
                 <div :style="{ padding: '24px', background: '#fff', minHeight: '85vh' }">
                     <taskgroups :taskgroups="taskgroups"></taskgroups>
+                    <create-taskgroup-button style="width: 60%; margin-left: 20%; margin-top: 20px;"/>
                 </div>
             </a-layout-content>
             <a-layout-footer style="text-align: center">
-                MyMonday ©2021
+                MyMonday ©2022
             </a-layout-footer>
         </a-layout>
     </a-layout>
@@ -28,6 +29,7 @@
     import SideNavbar from "@/components/SideNavbar.vue"
     import SubSideNavbar from "@/components/SubSideNavbar.vue"
     import Taskgroups from "@/components/Taskgroups.vue"
+    import CreateTaskgroupButton from "@/components/CreateTaskgroupButton.vue"
     import { defineComponent, ref, getCurrentInstance } from 'vue';
 
     export default defineComponent({
@@ -35,6 +37,7 @@
             SideNavbar,
             SubSideNavbar,
             Taskgroups,
+            CreateTaskgroupButton,
         },
         data() {
             return {
