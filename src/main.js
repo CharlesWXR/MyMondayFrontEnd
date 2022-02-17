@@ -222,6 +222,34 @@ const store = createStore({
                 type: 'setPresentWorkspace',
                 presentWorkspaceIndex: i,
             })
+            let p = {
+                workspace_id: (playload.selectedWorkspaceID[0])
+            }
+            console.log(p)
+            app.config.globalProperties.$http.post("/api/taskgroup",
+            qs.stringify(p))
+            .then ((res) => {
+                const r = res.data
+                if (r.code === 3000) {
+                    commit({
+                        type : 'setTaskgroups',
+                        taskgroups: []
+                    })
+                }
+                else if (r.code === 200) {
+                    commit({
+                        type : 'setTaskgroups',
+                        taskgroups: r.result
+                    })
+                }
+                else {
+                    commit({
+                        type : 'setTaskgroups',
+                        taskgroups: []
+                    })
+                    message.warning("未知错误！")
+                }
+            })
         },
         updateTask({ commit, state }, playload) {
             let params = {

@@ -15,7 +15,7 @@
                 <span>{{ workspace.name }}</span>
             </a-tooltip>
         </a-menu-item>
-        <a-menu-item>
+        <a-menu-item :key="-1">
             <plus-circle-outlined />
             <span>添加工作区</span>
         </a-menu-item>
@@ -26,6 +26,7 @@
     import { RightCircleOutlined, PlusCircleOutlined } from '@ant-design/icons-vue'
     import { defineComponent, reactive, computed, getCurrentInstance, ref } from 'vue'
     import { UserOutlined } from '@ant-design/icons-vue'
+    import qs from 'qs'
 
     export default defineComponent({
         name: 'SubSideNavbar',
@@ -68,7 +69,17 @@
             this.$watch(
                 () => this.selected.key,
                 (newVal, oldVal) => {
-                    if(newVal != this.$store.state.selectedWorkspaceID) {
+                    if (newVal < 0) {
+                        this.$http.put('/api/workspace',
+                        qs.stringify({department_id: this.$store.state.selectedDepartmentID[0], name: "新建工作区"}))
+                        .then(response => {
+                            let res = response.data
+                            if (res.code === 200) {
+                                this.$store.dispatch('refreshDepartments')
+                            }
+                        })
+                    }
+                    else if(newVal != this.$store.state.selectedWorkspaceID) {
                         if (typeof(newVal) != undefined && newVal !== null && newVal.length > 0) {
                             this.$store.dispatch({
                                 type: 'setPresentWorkspace',
